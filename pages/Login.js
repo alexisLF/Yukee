@@ -1,9 +1,30 @@
-import React, { useState } from 'react';
-import {View, Button, TextInput} from 'react-native'
+import React, { useEffect, useState } from 'react';
+import {View, Button, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, TextInput} from 'react-native'
 
 export default function Login(props){
 
     const [password, setPassword] = useState('');
+    const [email, setEmail] = useState('');
+
+
+    //alert('Render')
+
+    // Executé au chargement
+    useEffect(() => {
+        console.log('Je charge')
+    }, []); 
+
+    // Execution de la fonction quand email est modifié
+    useEffect(() => {
+        console.log(checkEmail(email));
+    }, [email]);
+
+    // Executé à chaque mise à jour 
+     useEffect(() => {
+        console.log('Je render')
+    }); 
+
+
 
     function checkPassword(str)
     {
@@ -23,7 +44,7 @@ export default function Login(props){
         } else if(!checkEmail(props.email)){
             alert('Veuillez entrer une adresse email valide')
         } else {
-            if(props.email === 'contact@entreprise.com' && password === '$Motdepasse2'){
+            if(email === 'contact@entreprise.com' && password === '$Motdepasse2'){
                 props.login();
             } else {
                 alert('Utilisateur introuvable')
@@ -35,9 +56,8 @@ export default function Login(props){
         <View style={{flex: 1}}>
 
             <TextInput
-                value={props.email}
-                onChangeText={(str) => props.setEmail(str)}
-
+                value={email}
+                onChangeText={(str) => setEmail(str)}
                 placeholder="Votre adresse email"
                 autoCompleteType="email"
                 keyboardType="email-address"
@@ -48,7 +68,6 @@ export default function Login(props){
             <TextInput
                 value={password}
                 onChangeText={(str) => setPassword(str)}
-
                 keyboardType="default"
                 placeholder="Votre mot de passe"
                 autoCompleteType="password"
@@ -57,7 +76,7 @@ export default function Login(props){
 
             <Button
                 title="Se connecter"
-                disabled={(props.email === '' || password === '')}
+                disabled={(email === '' || password === '')}
                 onPress={checkAndLoginIn}
             />
 

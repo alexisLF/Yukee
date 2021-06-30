@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, TouchableOpacity, Text, View, Image, Button, ScrollView } from 'react-native';
 import Header from './components/Header';
 import ScanButtonView from './components/ScanButtonView';
@@ -8,41 +8,86 @@ import TestState from './pages/TestState';
 import Home from './pages/Home';
 import LoremPicsum from './pages/LoremPicsum';
 import Login from './pages/Login';
-import IMC from './pages/Imc';
+import Product from './pages/Product';
+import Camera from './pages/Camera';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 export default function App() {
 
-  const [products, setProducts] = useState([
-    { title: 'Bouteille d\'eau' },
-    { title: 'Canette Fanta' },
-    { title: 'Canette Pepsi' },
-    { title: 'Canette de Perrier' },
-    { title: 'Kinder Bueno' },
-    { title: 'Belvita' },
-    { title: 'Pizza Sodebo' },
-  ]);
+  const [products, setProducts] = useState([]);
 
+  const [currentProduct, setCurrentProduct] = useState(null);
   const [page, navigate] = useState('Home');
 
 
-  function onPressLearnMore (){
-    alert('toto');
+  useEffect( () => {
+    async function fetchStorage (){
+      let localproducts = await AsyncStorage.getItem('@localproducts') ;
+      
+      if(localproducts !== null && localproducts.length > 0){
+        localproducts = JSON.parse(localproducts);
+        setProducts(localproducts);
+      }
+    }
+    
+    fetchStorage().then(console.log('fini'));
+  }, []); 
+  
+  function handleScanPress (){
+    navigate('Camera');
+    /*const product = {title: 'La démo !'};
+    setProducts(oldArray => [...oldArray, product]);*/
   }
 
-  function handleScan (){
-    const product = {title: 'La démo !'};
-    setProducts(oldArray => [...oldArray, product]);
+
+
+  async function afterCameraScan({type, data}){
+      await getProductInfoFromApi(data);
+      await AsyncStorage.setItem('@localproducts', JSON.stringify(products));
+  }
+
+  function login(){
+    navigate('Home')
+  }
+
+
+  async function getProductInfoFromApi (barCode) {
+    try {
+      //this.setState({loading : true});
+      
+      let response = await fetch(
+        'https://fr.openfoodfacts.org/api/v0/produit/' + barCode + '.json'
+      );
+      let responseJson = await response.json();
+      responseJson = responseJson.product;
+
+      setProducts((prevState) => [...prevState, responseJson]);
+      setCurrentProduct(responseJson);
+      console.log(responseJson)
+      navigate('Product');
+
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  function handleItemClick(item){
+    setCurrentProduct(item);
+    navigate('Product')
   }
 
   return (
     <View style={styles.container}>
       <Header title="Accueil"/>
 
-      { page === 'Home' && <Home products={products} handleScan={handleScan}/>}
+      { page === 'Home' && <Home onItemClick={handleItemClick} products={products} handleScan={handleScanPress}/>}
       { page === 'Test' && <TestState/> } 
       { page === 'LoremPicsum' && <LoremPicsum/> } 
-      { page === 'Login' && <Login/> } 
-      { page === 'IMC' && <IMC/> } 
+      { page === 'Login' && <Login login={login}/> } 
+      { page === 'Product' && <Product product={currentProduct}/> } 
+      { page === 'Camera' && <Camera handleCameraScan={afterCameraScan} /> } 
+
 
       <View style={styles.topMenu}>
           <Button 
@@ -62,17 +107,11 @@ export default function App() {
             color={page === "LoremPicsum" ? "green" : 'grey'}
             onPress={() => navigate('LoremPicsum')}
           />
-
+          
           <Button 
             title="Login" 
             color={page === "Login" ? "green" : 'grey'}
             onPress={() => navigate('Login')}
-          />
-
-          <Button 
-            title="IMC" 
-            color={page === "IMS" ? "green" : 'grey'}
-            onPress={() => navigate('IMC')}
           />
         </View>
 
